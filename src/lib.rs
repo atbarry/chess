@@ -1,5 +1,7 @@
-use bevy::{prelude::*, render::texture::ImageSettings};
-use board::Board;
+use bevy::{prelude::*, render::{texture::{ImageSettings}, camera::ScalingMode}};
+use bevy_tiled_camera::*;
+use board::{Board, PieceSpawner}; 
+use input::board_click_index;
 use constants::*;
 
 mod input;
@@ -12,15 +14,33 @@ impl Plugin for StarterPlugin {
     fn build(&self, app: &mut App) {
         app
             .insert_resource(ImageSettings::default_nearest())
+            .add_plugin(TiledCameraPlugin)
             .add_startup_system(create_board)
-            .add_startup_system(spawn_camera);
+            .add_startup_system(spawn_camera)
+            .add_system(on_board_click);
 
     }
 }
 
+fn on_board_click(
+    commands: Commands,
+    wnds: Res<Windows>,
+    q_camera: Query<(&Camera, &GlobalTransform)>,
+    mouse: Res<Input<MouseButton>>,
+    board: Res<Board>,
+) {
+    if let Some((x, y)) = board_click_index(wnds, q_camera, mouse) {
+        println!("Clicked on board at: {}, {}", x, y);
+        let clicked_tile = board.get_tile(x, y);
+
+        
+    }
+}
+
 fn spawn_camera(mut commands: Commands) {
-    // Spawn a camera
-    commands.spawn_bundle(Camera2dBundle{
+    let size = TILE_SIZE * (BOARD_WIDTH + 2) as f32;
+
+    let camera_bundle = Camera2dBundle{
         transform: Transform::from_xyz(
             BOARD_WIDTH as f32 * TILE_SIZE / 2.0,
             BOARD_HEIGHT as f32 * TILE_SIZE / 2.0,
@@ -29,14 +49,18 @@ fn spawn_camera(mut commands: Commands) {
 
         projection: OrthographicProjection {
             far: 1000.0,
-            left: 0.0 - TILE_SIZE * 2.0,
-            right: BOARD_WIDTH as f32 * TILE_SIZE + TILE_SIZE * 2.0,
-            bottom: 0.0 - TILE_SIZE * 2.0,
-            top: BOARD_HEIGHT as f32 * TILE_SIZE + TILE_SIZE * 2.0,
+            scaling_mode: ScalingMode::Auto { min_width: size, min_height: size},
             ..Default::default()
         },
         ..Default::default()
-    });
+    };
+
+    commands.spawn_bundle(camera_bundle);
+
+    // let tiled_camera_bun = TiledCameraBundle::unit_cam([BOARD_WIDTH as u32, BOARD_HEIGHT as u32])
+    //     .with_camera_position([0.0, 0.0])
+    //     .with_pixels_per_tile([TILE_SIZE as u32, TILE_SIZE as u32]);
+
 }
 
 fn create_board(mut commands: Commands, server: Res<AssetServer>) {
@@ -62,22 +86,3 @@ fn create_board(mut commands: Commands, server: Res<AssetServer>) {
 
     commands.insert_resource(board);
 }
-
-pub struct PieceSpawner {
-    white_king: Handle<Image>,
-    white_queen: Handle<Image>,
-    white_rook: Handle<Image>,
-    white_bishop: Handle<Image>,
-    white_knight: Handle<Image>,
-    white_pawn: Handle<Image>,
-    black_king: Handle<Image>,
-    black_queen: Handle<Image>,
-    black_rook: Handle<Image>,
-    black_bishop: Handle<Image>,
-    black_knight: Handle<Image>,
-    black_pawn: Handle<Image>,
-}
-
-
-    
-
