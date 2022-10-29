@@ -24,11 +24,6 @@ pub fn board_click_index(
     None
 }
 
-fn mouse_clicked(
-    mouse: Res<Input<MouseButton>>,
-) -> bool {
-    mouse.just_pressed(MouseButton::Left)
-}
 
 fn mouse_to_world(
     // need to get window dimensions
