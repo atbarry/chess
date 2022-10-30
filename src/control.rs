@@ -1,12 +1,13 @@
 use bevy::{prelude::*, render::camera::RenderTarget};
-use crate::board::{Board, Tile, Piece};
+use crate::{board::{Board, Tile, Piece, BoardPos}, constants::PIECE_Z_LAYER};
 
 pub struct SelectionPlugin;
 
 impl Plugin for SelectionPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(SelectedSquare::default())
-            .add_system(select_square)
+            .insert_resource(HiglightedSquares{ squares: Vec::new() })
+            .add_system(on_click)
             .add_system(highlight_squares);
         
     }
@@ -15,7 +16,11 @@ impl Plugin for SelectionPlugin {
 pub struct SelectedSquare{
     changed: bool,
     tile: Option<Entity>,
-    piece: Option<Entity>,
+    piece: Option<Piece>,
+}
+
+pub struct HiglightedSquares{
+    squares: Vec<(Entity, Color)>,
 }
 
 impl Default for SelectedSquare {
@@ -28,12 +33,14 @@ impl Default for SelectedSquare {
     }
 }
 
-pub fn select_square(
+pub fn on_click(
+    mut commands: Commands,
     wnds: Res<Windows>,
     q_camera: Query<(&Camera, &GlobalTransform)>,
     mouse: Res<Input<MouseButton>>,
-    board: Res<Board>,
+    mut board: ResMut<Board>,
     mut selected: ResMut<SelectedSquare>,
+    mut highlighted: ResMut<HiglightedSquares>,
 ) {
     // if there was no click, don't do anything
     if !mouse.just_pressed(MouseButton::Left) {
@@ -42,10 +49,19 @@ pub fn select_square(
 
     selected.changed = true;
     
-    if let Some((x, y)) = get_square_from_mouse(wnds, q_camera) {
-        println!("Clicked on board at: {}, {}", x, y);
-        selected.piece = board.get_piece(x, y);  
-        selected.tile = Some(board.get_tile(x, y));   
+    if let Some(target_square) = get_square_from_mouse(wnds, q_camera) {
+        println!("Clicked on board at: {}, {}", target_square.x, target_square.y);
+
+        if let Some(piece) = &selected.piece {
+            board.move_piece(&mut commands, piece.board_pos, target_square);
+            selected.piece = None;
+            selected.tile = None;
+        } else {
+            selected.piece = board.get_piece(target_square);  
+            selected.tile = Some(board.get_tile_entity(target_square));  
+             // highlighted.squares = vec![(board.get_tile_entity(x + 1, y + 1), Color::rgb(0.0, 7.0, 1.0))];
+        }
+        
     } else {
         selected.piece = None;
         selected.tile = None;
@@ -54,30 +70,44 @@ pub fn select_square(
 
 pub fn highlight_squares(
     mut selected: ResMut<SelectedSquare>,
+    mut highlighted: ResMut<HiglightedSquares>,
     mut q_tile: Query<(Entity, &mut Sprite, &Tile)>,
 ) {
-    if !selected.changed {
+    if !selected.changed || selected.tile.is_none() {
         return;
     }
 
-    // now we have changed the selected
-    selected.changed = false;
+    let entity_in_highlighted = |entity: Entity| -> Option<Color> {
+        for (e, h) in highlighted.squares.iter() {
+            if *e == entity {
+                return Some(*h);
+            }
+        }
+        
+        None
+    };
 
     for (entity, mut sprite, tile) in q_tile.iter_mut() {
         if Some(entity) == selected.tile {
             sprite.color = Color::rgb(0.8, 0.1, 0.1);
+        } else if let Some(color) = entity_in_highlighted(entity) {
+            sprite.color = color;
         } else {
             sprite.color = tile.normal_color;
         }
     }
+
+    // clear the highlighted squares
+    highlighted.squares.clear();
+    selected.changed = false;
 }
 
 fn get_square_from_mouse(
     wnds: Res<Windows>,
     q_camera: Query<(&Camera, &GlobalTransform)>,
-) -> Option<(usize, usize)> {
+) -> Option<BoardPos> {
     if let Some(world_pos) = mouse_to_world(wnds, q_camera){
-        let board_pos = Board::world_to_board(Vec3::new(world_pos.x, world_pos.y, 0.0));        
+        let board_pos = BoardPos::world_to_board(world_pos.extend(PIECE_Z_LAYER));
         return board_pos;
     } 
 

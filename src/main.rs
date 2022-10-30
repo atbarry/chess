@@ -1,29 +1,26 @@
 use bevy::{prelude::*, render::{texture::{ImageSettings}, camera::ScalingMode}};
 use bevy_inspector_egui::WorldInspectorPlugin;
-use board::{Board, PieceSpawner, BoardPos}; 
-use ui::SelectionPlugin;
+use board::{Board, PieceSpawner}; 
+use control::SelectionPlugin;
 use constants::*;
+use movement::MovePlugin;
 
-mod ui;
+mod control;
+mod movement;
 mod board;
 mod constants;
-
-fn test(
-    q_pos: Query<&BoardPos>,
-) {
-    
-}
-
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugin(WorldInspectorPlugin::new())
         .add_plugin(SelectionPlugin)
+        .add_plugin(MovePlugin)
         .insert_resource(ImageSettings::default_nearest())
         .add_startup_system(create_board)
         .add_startup_system(spawn_camera)
         .run();
 }
+
 
 fn spawn_camera(mut commands: Commands) {
     let size = TILE_SIZE * (BOARD_WIDTH + 2) as f32;
@@ -74,6 +71,8 @@ fn create_board(mut commands: Commands, server: Res<AssetServer>) {
 
     commands.insert_resource(board);
 }
+
+
 
 
 

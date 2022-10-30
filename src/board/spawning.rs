@@ -1,10 +1,10 @@
 use bevy::prelude::*;
-use crate::constants::{BOARD_HEIGHT, BOARD_WIDTH, TILE_SIZE};
-use super::{PieceType, PieceSpawner, Board, Tile, Piece};
+use crate::constants::{BOARD_HEIGHT, BOARD_WIDTH, TILE_SIZE, PIECE_Z_LAYER};
+use super::{PieceType, PieceSpawner, Board, Tile, Piece, BoardPos};
 
 impl PieceSpawner {
-    fn spawn_piece(&self, commands: &mut Commands, piece: PieceType, world_pos: Vec2) -> Option<Entity> {
-        let image = match piece {
+    fn spawn_piece(&self, commands: &mut Commands, piece_type: PieceType, board_pos: BoardPos) -> Option<Piece> {
+        let image = match piece_type {
             PieceType::WhiteKing => self.white_king.clone(),
             PieceType::WhiteQueen => self.white_queen.clone(),
             PieceType::WhiteRook => self.white_rook.clone(),
@@ -19,27 +19,33 @@ impl PieceSpawner {
             PieceType::BlackPawn => self.black_pawn.clone(),
         };
 
-        let entity_id = commands.spawn_bundle(SpriteBundle {
+        let world_pos = BoardPos::to_world_pos(board_pos.x, board_pos.y);
+
+        let entity = commands.spawn_bundle(SpriteBundle {
             texture: image,
-            transform: Transform::from_xyz(world_pos.x, world_pos.y, 10.0),
+            transform: Transform::from_xyz(world_pos.x, world_pos.y, PIECE_Z_LAYER),
             // sprite: Sprite {
             //     color: Color::ORANGE,
             //     ..Default::default()
             // },
             ..Default::default()
-        }).insert(Piece {
-            start_pos: world_pos,
-            target_pos: None,
-            ptype: piece,
         }).id();
 
-        Some(entity_id)
+        let piece = Piece{
+            piece_type,
+            entity,
+            board_pos,
+        };
+
+        // commands.entity(entity).insert(piece.clone());
+
+        Some(piece)
     }
 }
 impl Board{
     pub fn new(spawner: PieceSpawner) -> Self{
         Self{
-            board: [[None; BOARD_HEIGHT]; BOARD_WIDTH],
+            board: vec![vec![None; BOARD_WIDTH]; BOARD_HEIGHT],
             tiles: Vec::new(),
             spawner,
         }
@@ -57,7 +63,7 @@ impl Board{
                     Color::rgb(0.1, 0.1, 0.1)
                 };
 
-                let pos = Board::to_world_pos(x, y);
+                let pos = BoardPos::to_world_pos(x, y);
 
                 let tile = commands.spawn_bundle(SpriteBundle{
                     // texture,
@@ -86,7 +92,7 @@ impl Board{
             self.board[x][1] = self.spawner.spawn_piece(
                 commands,
                 PieceType::WhitePawn,
-                Board::to_world_pos(x, 1),
+                BoardPos::new(x, 1),
             );
         }
 
@@ -94,53 +100,53 @@ impl Board{
         self.board[0][0] = self.spawner.spawn_piece(
             commands,
             PieceType::WhiteRook,
-            Board::to_world_pos(0, 0),
+            BoardPos::new(0, 0),
         );
 
         self.board[BOARD_WIDTH - 1][0] = self.spawner.spawn_piece(
             commands,
             PieceType::WhiteRook,
-            Board::to_world_pos(BOARD_WIDTH - 1, 0),
+            BoardPos::new(BOARD_WIDTH - 1, 0),
         );
 
         // Spawn white knights
         self.board[1][0] = self.spawner.spawn_piece(
             commands,
             PieceType::WhiteKnight,
-            Board::to_world_pos(1, 0),
+            BoardPos::new(1, 0),
         );
 
         self.board[BOARD_WIDTH - 2][0] = self.spawner.spawn_piece(
             commands,
             PieceType::WhiteKnight,
-            Board::to_world_pos(BOARD_WIDTH - 2, 0),
+            BoardPos::new(BOARD_WIDTH - 2, 0),
         );
 
         // Spawn white bishops
         self.board[2][0] = self.spawner.spawn_piece(
             commands,
             PieceType::WhiteBishop,
-            Board::to_world_pos(2, 0),
+            BoardPos::new(2, 0),
         );
 
         self.board[BOARD_WIDTH - 3][0] = self.spawner.spawn_piece(
             commands,
             PieceType::WhiteBishop,
-            Board::to_world_pos(BOARD_WIDTH - 3, 0),
+            BoardPos::new(BOARD_WIDTH - 3, 0),
         );
 
         // Spawn white queen
         self.board[3][0] = self.spawner.spawn_piece(
             commands,
             PieceType::WhiteQueen,
-            Board::to_world_pos(3, 0),
+            BoardPos::new(3, 0),
         );
 
         // Spawn white king
         self.board[4][0] = self.spawner.spawn_piece(
             commands,
             PieceType::WhiteKing,
-            Board::to_world_pos(4, 0),
+            BoardPos::new(4, 0),
         );
 
         // Spawn black pawns
@@ -148,7 +154,7 @@ impl Board{
             self.board[x][BOARD_HEIGHT - 2] = self.spawner.spawn_piece(
                 commands,
                 PieceType::BlackPawn,
-                Board::to_world_pos(x, BOARD_HEIGHT - 2),
+                BoardPos::new(x, BOARD_HEIGHT - 2),
             );
         }
 
@@ -156,53 +162,53 @@ impl Board{
         self.board[0][BOARD_HEIGHT - 1] = self.spawner.spawn_piece(
             commands,
             PieceType::BlackRook,
-            Board::to_world_pos(0, BOARD_HEIGHT - 1),
+            BoardPos::new(0, BOARD_HEIGHT - 1),
         );
 
         self.board[BOARD_WIDTH - 1][BOARD_HEIGHT - 1] = self.spawner.spawn_piece(
             commands,
             PieceType::BlackRook,
-            Board::to_world_pos(BOARD_WIDTH - 1, BOARD_HEIGHT - 1),
+            BoardPos::new(BOARD_WIDTH - 1, BOARD_HEIGHT - 1),
         );
 
         // Spawn black knights
         self.board[1][BOARD_HEIGHT - 1] = self.spawner.spawn_piece(
             commands,
             PieceType::BlackKnight,
-            Board::to_world_pos(1, BOARD_HEIGHT - 1),
+            BoardPos::new(1, BOARD_HEIGHT - 1),
         );
 
         self.board[BOARD_WIDTH - 2][BOARD_HEIGHT - 1] = self.spawner.spawn_piece(
             commands,
             PieceType::BlackKnight,
-            Board::to_world_pos(BOARD_WIDTH - 2, BOARD_HEIGHT - 1),
+            BoardPos::new(BOARD_WIDTH - 2, BOARD_HEIGHT - 1),
         );
 
         // Spawn black bishops
         self.board[2][BOARD_HEIGHT - 1] = self.spawner.spawn_piece(
             commands,
             PieceType::BlackBishop,
-            Board::to_world_pos(2, BOARD_HEIGHT - 1),
+            BoardPos::new(2, BOARD_HEIGHT - 1),
         );
 
         self.board[BOARD_WIDTH - 3][BOARD_HEIGHT - 1] = self.spawner.spawn_piece(
             commands,
             PieceType::BlackBishop,
-            Board::to_world_pos(BOARD_WIDTH - 3, BOARD_HEIGHT - 1),
+            BoardPos::new(BOARD_WIDTH - 3, BOARD_HEIGHT - 1),
         );
 
         // Spawn black queen
         self.board[3][BOARD_HEIGHT - 1] = self.spawner.spawn_piece(
             commands,
             PieceType::BlackQueen,
-            Board::to_world_pos(3, BOARD_HEIGHT - 1),
+            BoardPos::new(3, BOARD_HEIGHT - 1),
         );
 
         // Spawn black king
         self.board[4][BOARD_HEIGHT - 1] = self.spawner.spawn_piece(
             commands,
             PieceType::BlackKing,
-            Board::to_world_pos(4, BOARD_HEIGHT - 1),
+            BoardPos::new(4, BOARD_HEIGHT - 1),
         );
     }
 }
