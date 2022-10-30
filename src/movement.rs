@@ -41,6 +41,7 @@ pub struct Moveable {
 
 impl Moveable {
     pub fn new(start_pos: Vec2, target_pos: Vec2) -> Self {
+        println!("Moving from {:?} to {:?}", start_pos, target_pos);
         Self {
             start_pos,
             target_pos,
