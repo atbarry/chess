@@ -8,7 +8,7 @@ pub struct Board{
     spawner: PieceSpawner,
 }
 
-pub enum Piece{
+pub enum PieceType{
     WhiteKing,
     WhiteQueen,
     WhiteRook,
@@ -22,6 +22,22 @@ pub enum Piece{
     BlackKnight,
     BlackPawn,
 }
+
+#[derive(Component)]
+pub struct Piece{
+    pub start_pos: Vec2,
+    pub target_pos: Option<Vec2>,
+    pub ptype: PieceType,
+}
+
+#[derive(Component)]
+pub struct Tile{
+    pub normal_color: Color,
+}
+
+#[derive(Component)]
+pub struct BoardPos(pub usize, pub usize);
+
 pub struct PieceSpawner {
     pub white_king: Handle<Image>,
     pub white_queen: Handle<Image>,
