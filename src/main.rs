@@ -1,19 +1,23 @@
 use bevy::{prelude::*, render::{texture::{ImageSettings}, camera::ScalingMode}};
 use bevy_inspector_egui::WorldInspectorPlugin;
 use board::{Board, PieceSpawner}; 
-use control::SelectionPlugin;
+use control::ControlPlugin;
 use constants::*;
 use movement::MovePlugin;
+use input::InputPlugin;
 
 mod control;
 mod movement;
 mod board;
 mod constants;
+mod input; 
+
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugin(WorldInspectorPlugin::new())
-        .add_plugin(SelectionPlugin)
+        .add_plugin(InputPlugin)
+        .add_plugin(ControlPlugin)
         .add_plugin(MovePlugin)
         .insert_resource(ImageSettings::default_nearest())
         .add_startup_system(create_board)
