@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use crate::{board::{Board, Tile, Piece, BoardPos, BChange}, constants::{SELECTED_COLOR, HIGHLIGHT_COLOR, DESTROY_COLOR, SWAP_COLOR, PROMOTE_COLOR}, input::MouseInfo};
+use crate::{board::{Board, Tile, Piece, BChange}, constants::{SELECTED_COLOR, HIGHLIGHT_COLOR, DESTROY_COLOR, SWAP_COLOR, PROMOTE_COLOR}, input::MouseInfo};
 
 pub struct ControlPlugin;
 

@@ -12,6 +12,7 @@ mod board;
 mod constants;
 mod input; 
 
+#[cfg(debug_assertions)]
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
@@ -24,6 +25,20 @@ fn main() {
         .add_startup_system(spawn_camera)
         .run();
 }
+
+#[cfg(not(debug_assertions))]
+fn main() {
+    App::new()
+        .add_plugins(DefaultPlugins)
+        .add_plugin(InputPlugin)
+        .add_plugin(ControlPlugin)
+        .add_plugin(MovePlugin)
+        .insert_resource(ImageSettings::default_nearest())
+        .add_startup_system(create_board)
+        .add_startup_system(spawn_camera)
+        .run();
+}
+
 
 
 fn spawn_camera(mut commands: Commands) {
