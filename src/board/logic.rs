@@ -1,4 +1,4 @@
-use super::{Board, BoardPos, PieceType, Side, Piece, BChange, BChange::{Move, MoveDestroy, Swap}};
+use super::{Board, BoardPos, PieceType, Side, Piece, BChange, BChange::{Move, MoveDestroy, BothMove}};
 
 #[derive(Clone, Copy)]
 enum Dir{
@@ -140,7 +140,7 @@ impl Board {
 
                 if let Some(rook) = self.get_piece(rook_square) {
                     if rook.piece_type == PieceType::Rook && rook.num_moves == 0 {
-                        changes.push(Swap { 
+                        changes.push(BothMove { 
                             start1: selected_square, 
                             end1: selected_square.square_in_dir(Dir::Custom(2, 0)).unwrap(), 
                             start2: rook_square, 
@@ -169,7 +169,7 @@ impl Board {
                 
                 if let Some(rook) = self.get_piece(rook_square) {
                     if rook.piece_type == PieceType::Rook && rook.num_moves == 0 {
-                        changes.push(Swap { 
+                        changes.push(BothMove { 
                             start1: selected_square, 
                             end1: selected_square.square_in_dir(Dir::Custom(-2, 0)).unwrap(), 
                             start2: rook_square, 
@@ -267,7 +267,6 @@ impl Board {
 
             false
         };
-
 
         match side {
             Side::White => {
@@ -368,6 +367,28 @@ impl Board {
 
         let mut add_move = |dir: Dir| {
             let slide_moves = slide(dir, side, selected_square, self);
+            // check for push move 
+            let last_square = match slide_moves.len() {
+                0 => selected_square,
+                _ => slide_moves.last().unwrap().click_pos_to_activate_change(),
+            };
+
+            if let Some(next_square) = last_square.square_in_dir(dir) {
+                if self.is_occupied(next_square) {
+                    if let Some(push_move) = next_square.square_in_dir(dir){
+                        if !self.is_occupied(push_move) {
+                            moves.push(BothMove{
+                                start1: selected_square,
+                                start2: next_square,
+                                end1: next_square,
+                                end2: push_move,
+                            });
+                        }
+                    }
+                }
+            }
+            
+            
             moves.extend(slide_moves);
         };
 

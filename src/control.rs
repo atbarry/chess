@@ -111,7 +111,7 @@ impl HiglightedSquares {
                 BChange::MoveDestroy { start, end, target, } => 
                     (board.get_tile_entity(end), DESTROY_COLOR),
 
-                BChange::Swap { start1, start2, end1, end2} => 
+                BChange::BothMove { start1, start2, end1, end2} => 
                     (board.get_tile_entity(start2), SWAP_COLOR),
                 BChange::Promotion { start, end } => 
                     (board.get_tile_entity(end), PROMOTE_COLOR),

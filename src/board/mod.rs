@@ -28,7 +28,7 @@ pub enum BChange{
         end: BoardPos,
         target: BoardPos,
     },
-    Swap {
+    BothMove {
         start1: BoardPos,
         start2: BoardPos,
         end1: BoardPos,
@@ -113,7 +113,7 @@ impl Board{
                 commands.entity(enemy).despawn();
                 self.move_piece(commands, start, end);
             },
-            BChange::Swap { start1, start2, end1, end2 } => {
+            BChange::BothMove { start1, start2, end1, end2 } => {
                 self.swap_piece(commands, start1, start2, end1, end2);
             },
             BChange::Promotion { start, end } => {
@@ -248,7 +248,7 @@ impl BChange {
         match self {
             BChange::Move { start, end } => *end,
             BChange::MoveDestroy { start, end, target } => *end,
-            BChange::Swap { start1, start2, end1, end2 } => *start2,
+            BChange::BothMove { start1, start2, end1, end2 } => *start2,
             BChange::Promotion { start, end } => *end,
         }
     }
@@ -258,7 +258,7 @@ impl BChange {
         match self {
             BChange::Move { start, end } => BChange::Promotion { start: *start, end: *end },
             BChange::MoveDestroy { start, end, target } => BChange::Promotion { start: *start, end: *end },
-            BChange::Swap { start1, start2, end1, end2 } => BChange::Promotion { start: *start1, end: *end1 },
+            BChange::BothMove { start1, start2, end1, end2 } => BChange::Promotion { start: *start1, end: *end1 },
             BChange::Promotion { start, end } => BChange::Promotion { start: *start, end: *end },
         }
     }
