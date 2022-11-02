@@ -38,6 +38,7 @@ impl PieceSpawner {
             board_pos,
             distance_moved: 0,
             num_moves: 0,
+            turn_last_moved: 0,
         };
 
         // commands.entity(entity).insert(piece.clone());
@@ -52,10 +53,11 @@ impl Board{
             tiles: Vec::new(),
             spawner,
             turn: Side::White,
+            turn_num: 0,
         }
     }
 
-    pub fn change_piece_type_on_move(&mut self, commands: &mut Commands, piece: &mut Piece, new_type: PieceType) {
+    pub fn promote_piece(&mut self, commands: &mut Commands, piece: &mut Piece, new_type: PieceType) {
         piece.piece_type = new_type;
         // get rid of the old entity
         commands.entity(piece.entity).despawn();

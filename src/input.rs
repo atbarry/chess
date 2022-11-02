@@ -1,5 +1,5 @@
 use bevy::{prelude::*, render::camera::RenderTarget};
-
+use crate::control::on_click;
 use crate::board::BoardPos;
 
 pub struct InputPlugin; 
@@ -10,17 +10,17 @@ impl Plugin for InputPlugin {
             world_cords: None,
             board_pos: None,
             just_clicked: false,
-        }).add_system(update_mouse);
-
+        }).add_system(update_mouse
+            .before(on_click)
+        );
     }
 }
 
 pub struct MouseInfo {
-    pub world_cords: Option<Vec2>,
+    pub world_cords: Option<Vec3>,
     pub board_pos: Option<BoardPos>,
     pub just_clicked: bool, 
 }
-
 
 fn update_mouse(
     wnds: Res<Windows>,
@@ -31,20 +31,22 @@ fn update_mouse(
     mouse.world_cords = mouse_to_world(wnds, q_camera);
 
     mouse.board_pos = match mouse.world_cords {
-        Some(pos) => BoardPos::world_to_board(pos.extend(0.0)),
+        Some(pos) => BoardPos::world_to_board(pos),
         None => None,
     };
 
     mouse.just_clicked = mouse_button.just_pressed(MouseButton::Left);
+    if mouse.just_clicked {
+        dbg!("Just clicked the mouse at", mouse.board_pos);
+    }
 }
-
 
 fn mouse_to_world(
     // need to get window dimensions
     wnds: Res<Windows>,
     // query to get camera transform
     q_camera: Query<(&Camera, &GlobalTransform)>,
-) -> Option<Vec2> {
+) -> Option<Vec3> {
     // get the camera info and transform
     // assuming there is exactly one main camera entity, so query::single() is OK
     let (camera, camera_transform) = q_camera.single();
@@ -70,13 +72,11 @@ fn mouse_to_world(
         // use it to convert ndc to world-space coordinates
         let world_pos = ndc_to_world.project_point3(ndc.extend(-1.0));
 
-        // reduce it to a 2D value
-        let world_pos: Vec2 = world_pos.truncate();
+        // // reduce it to a 2D value
+        // let world_pos: Vec2 = world_pos;
 
         return Some(world_pos);
     } else{
         return None;
     }
 }
-
-

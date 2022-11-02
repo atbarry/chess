@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use crate::{board::{Board, Tile, Piece, BoardPos}, constants::{SELECTED_COLOR, HIGHLIGHT_COLOR}, input::MouseInfo};
+use crate::{board::{Board, Tile, Piece, BoardPos, BChange}, constants::{SELECTED_COLOR, HIGHLIGHT_COLOR, DESTROY_COLOR, SWAP_COLOR, PROMOTE_COLOR}, input::MouseInfo};
 
 pub struct ControlPlugin;
 
@@ -38,7 +38,7 @@ pub fn on_click(
     selected.changed = true;
     let target_square = mouse.board_pos;
     
-    // if there is no square under the mouse, don't select anything
+    // if there is no square under the mouse, deselect and exit
     if target_square.is_none() {
         selected.piece = None;
         selected.tile = None;
@@ -49,9 +49,9 @@ pub fn on_click(
     println!("Clicked on board at: {}, {}", target_square.x, target_square.y);
 
     if let Some(piece) = &selected.piece {
-        if board.is_valid_move(piece.board_pos, target_square) {
+        if let Some(change) = board.check_valid_change(piece.board_pos, target_square) {
             println!("Valid move");
-            board.move_piece(&mut commands, piece.board_pos, target_square);
+            board.apply_board_change(&mut commands, change);
             selected.piece = None;
             selected.tile = None;
             return;
@@ -62,8 +62,8 @@ pub fn on_click(
     selected.tile = Some(board.get_tile_entity(target_square));  
     
     if let Some(piece) = &selected.piece {
-        let moves = board.get_valid_moves(piece.board_pos);
-        *highlighted = HiglightedSquares::from_board_positions(&board, moves);
+        let moves = board.get_possible_moves(piece.board_pos);
+        *highlighted = HiglightedSquares::from_board_changes(&board, moves);
     }
 }
 
@@ -102,10 +102,22 @@ pub fn highlight_squares(
 }
 
 impl HiglightedSquares {
-    pub fn from_board_positions(board: &Board, positions: Vec<BoardPos>) -> Self{
+    pub fn from_board_changes(board: &Board, board_changes: Vec<BChange>) -> Self{
         let mut squares = Vec::new();
-        for pos in positions{
-            squares.push((board.get_tile_entity(pos), HIGHLIGHT_COLOR));
+        for change in board_changes{
+            #[allow(unused)]
+            let highlight_info = match change {
+                BChange::Move { start, end } => (board.get_tile_entity(end), HIGHLIGHT_COLOR),
+                BChange::MoveDestroy { start, end, target, } => 
+                    (board.get_tile_entity(end), DESTROY_COLOR),
+
+                BChange::Swap { start1, start2, end1, end2} => 
+                    (board.get_tile_entity(start2), SWAP_COLOR),
+                BChange::Promotion { start, end } => 
+                    (board.get_tile_entity(end), PROMOTE_COLOR),
+            };
+
+            squares.push(highlight_info);
         }
 
         Self{
