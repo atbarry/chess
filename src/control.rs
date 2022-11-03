@@ -8,8 +8,9 @@ impl Plugin for ControlPlugin {
         app.insert_resource(SelectedSquare::default())
             .insert_resource(HiglightedSquares{ squares: Vec::new() })
             .add_system(on_click)
-            .add_system(highlight_squares);
-        
+            .add_system(highlight_squares)
+            .add_system(undo)
+            .add_system(restart);
     }
 }
 
@@ -99,6 +100,38 @@ pub fn highlight_squares(
     // clear the highlighted squares
     highlighted.squares.clear();
     selected.changed = false;
+}
+
+fn undo(
+    mut commands: Commands,
+    mut board: ResMut<Board>,
+    mut selected: ResMut<SelectedSquare>,
+    mut highlighted: ResMut<HiglightedSquares>,
+    input: Res<Input<KeyCode>>,
+) {
+    if input.just_pressed(KeyCode::Z) && input.pressed(KeyCode::LControl) {
+        board.undo_last_change(&mut commands);
+ 
+        selected.piece = None;
+        selected.tile = None;
+        highlighted.squares.clear();
+    }
+}
+
+fn restart(
+    mut commands: Commands,
+    mut board: ResMut<Board>,
+    mut selected: ResMut<SelectedSquare>,
+    mut highlighted: ResMut<HiglightedSquares>,
+    input: Res<Input<KeyCode>>,
+) {
+    if input.just_pressed(KeyCode::R) && input.pressed(KeyCode::LControl) {
+        board.restart_game(&mut commands);
+ 
+        selected.piece = None;
+        selected.tile = None;
+        highlighted.squares.clear();
+    }
 }
 
 impl HiglightedSquares {

@@ -3,8 +3,8 @@ use crate::constants::{BOARD_HEIGHT, BOARD_WIDTH, TILE_SIZE, PIECE_Z_LAYER};
 use super::{PieceType, PieceSpawner, Board, Tile, Piece, BoardPos, Side};
 
 impl PieceSpawner {
-    fn spawn_piece(&self, commands: &mut Commands, piece_type: PieceType, side: Side, board_pos: BoardPos) -> Option<Piece> {
-        let image = match (side, piece_type) {
+    fn get_image(&self, piece_type: PieceType, side: Side) -> Handle<Image> {
+        match (side, piece_type) {
             (Side::White, PieceType::King) => self.white_king.clone(),
             (Side::White, PieceType::Queen) => self.white_queen.clone(),
             (Side::White, PieceType::Rook) => self.white_rook.clone(),
@@ -17,17 +17,16 @@ impl PieceSpawner {
             (Side::Black, PieceType::Bishop) => self.black_bishop.clone(),
             (Side::Black, PieceType::Knight) => self.black_knight.clone(),
             (Side::Black, PieceType::Pawn) => self.black_pawn.clone(),
-        };
+        }
+    }
 
+    fn spawn_piece(&self, commands: &mut Commands, piece_type: PieceType, side: Side, board_pos: BoardPos) -> Option<Piece> {
+        let image = self.get_image(piece_type, side);
         let world_pos = BoardPos::to_world_pos(board_pos.x, board_pos.y);
 
         let entity = commands.spawn_bundle(SpriteBundle {
             texture: image,
             transform: Transform::from_xyz(world_pos.x, world_pos.y, PIECE_Z_LAYER),
-            // sprite: Sprite {
-            //     color: Color::ORANGE,
-            //     ..Default::default()
-            // },
             ..Default::default()
         }).id();
 
@@ -41,9 +40,21 @@ impl PieceSpawner {
             turn_last_moved: 0,
         };
 
-        // commands.entity(entity).insert(piece.clone());
-
         Some(piece)
+    }
+
+    fn respawn_piece(&self, commands: &mut Commands, mut piece: Piece) -> Piece{
+        let image = self.get_image(piece.piece_type, piece.side);
+        let world_pos = piece.board_pos.self_to_world_pos();
+
+        let id = commands.spawn_bundle(SpriteBundle {
+            texture: image,
+            transform: Transform::from_xyz(world_pos.x, world_pos.y, PIECE_Z_LAYER),
+            ..Default::default()
+        }).id();
+
+        piece.entity = id;
+        piece
     }
 }
 impl Board{
@@ -54,7 +65,50 @@ impl Board{
             spawner,
             turn: Side::White,
             turn_num: 0,
+            previous: Vec::new(),
         }
+    }
+
+    pub fn undo_last_change(&mut self, commands: &mut Commands){
+        if let Some(board) = self.previous.pop(){
+            dbg!("Undoing last change");
+            self.clear_board(commands);
+            dbg!("Cleared board");
+            self.board = board;
+            self.respawn_pieces(commands);
+            dbg!("Respawned pieces");
+            self.previous_turn();
+        }
+    }
+
+    fn clear_board(&mut self, commands: &mut Commands){
+        for row in self.board.iter_mut(){
+            for square in row.iter_mut(){
+                if let Some(piece) = square{
+                    commands.entity(piece.entity).despawn();
+                }
+                *square = None;
+            }
+        }
+    }
+
+    fn respawn_pieces(&mut self, commands: &mut Commands){
+        for row in self.board.iter_mut(){
+            for square in row.iter_mut(){
+                if let Some(piece) = square{
+                    *piece = self.spawner.respawn_piece(commands, piece.clone());
+                }
+            }
+        }
+    }
+
+    pub fn restart_game(&mut self, commands: &mut Commands) {
+        self.clear_board(commands);
+        self.turn = Side::White;
+        self.turn_num = 0;
+        self.previous = Vec::new();
+        self.board = vec![vec![None; BOARD_WIDTH]; BOARD_HEIGHT];
+        self.spawn_pieces(commands);
     }
 
     pub fn promote_piece(&mut self, commands: &mut Commands, piece: &mut Piece, new_type: PieceType) {
@@ -110,11 +164,11 @@ impl Board{
                 BoardPos::new(x, 1).unwrap(),
             );
 
-            self.board[x][6] = self.spawner.spawn_piece(
+            self.board[x][BOARD_HEIGHT - 2] = self.spawner.spawn_piece(
                 commands,
                 PieceType::Pawn,
                 Side::Black,
-                BoardPos::new(x, 6).unwrap(),
+                BoardPos::new(x, BOARD_HEIGHT - 2).unwrap(),
             );
         }
 

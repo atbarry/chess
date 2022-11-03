@@ -1,3 +1,5 @@
+use crate::constants::BOARD_HEIGHT;
+
 use super::{Board, BoardPos, PieceType, Side, Piece, BChange, BChange::{Move, MoveDestroy, BothMove}};
 
 #[derive(Clone, Copy)]
@@ -275,7 +277,7 @@ impl Board {
                 add_normal_move(Dir::UpLeft);
 
                 // check if the pawn can be promoted
-                if piece.board_pos.y == 6 {
+                if piece.board_pos.y == BOARD_HEIGHT - 1 {
                     return moves.iter().map(|f| f.convert_to_promotion()).collect();
                 }
 

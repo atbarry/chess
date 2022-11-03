@@ -5,12 +5,15 @@ pub mod spawning;
 pub mod logic;
 
 pub struct Board{
-    board: Vec<Vec<Option<Piece>>>,
+    board: Pieces,
     tiles: Vec<Vec<Entity>>,
     spawner: PieceSpawner,
     turn: Side,
     turn_num: u32,
+    previous: Vec<Pieces>,
 }
+
+type Pieces = Vec<Vec<Option<Piece>>>;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct BoardPos{
@@ -89,7 +92,11 @@ pub struct PieceSpawner {
 }
 
 impl Board{
-    fn change_turn(&mut self) {
+    fn save(&mut self){
+        self.previous.push(self.board.clone());
+    }
+
+    fn next_turn(&mut self) {
         self.turn = match self.turn {
             Side::White => Side::Black,
             Side::Black => Side::White,
@@ -98,11 +105,23 @@ impl Board{
         self.turn_num += 1;
     }
 
+    fn previous_turn(&mut self) {
+        self.turn = match self.turn {
+            Side::White => Side::Black,
+            Side::Black => Side::White,
+        };
+
+        if self.turn_num > 0 {
+            self.turn_num -= 1;
+        }
+    }
+
     pub fn is_turn(&self, side: Side) -> bool {
         side.is_friendly(&self.turn)
     }
 
     pub fn apply_board_change(&mut self, commands: &mut Commands, board_change: BChange) {
+        self.save();
 
         match board_change {
             BChange::Move { start, end } => {
@@ -130,7 +149,7 @@ impl Board{
         }
 
         // finally change the turn
-        self.change_turn();
+        self.next_turn();
     }   
 
     fn move_piece(&mut self, commands: &mut Commands, start: BoardPos, end: BoardPos) {
