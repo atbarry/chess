@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use crate::constants::{BOARD_HEIGHT, BOARD_WIDTH, TILE_SIZE, PIECE_Z_LAYER};
+use crate::constants::{BOARD_HEIGHT, BOARD_WIDTH, TILE_SIZE, PIECE_Z_LAYER, LIGHT_TILE_COLOR, DARK_TILE_COLOR};
 use super::{PieceType, PieceSpawner, Board, Tile, Piece, BoardPos, Side};
 
 impl PieceSpawner {
@@ -124,11 +124,9 @@ impl Board{
             let mut row = Vec::new();
             for y in 0..BOARD_HEIGHT{
                 let color =  if (x + y) % 2 == 0{
-                    // self.spawner.white_tile.clone()
-                    Color::rgb(0.9, 0.9, 0.9)
+                    LIGHT_TILE_COLOR
                 }else{
-                    // self.spawner.black_tile.clone()
-                    Color::rgb(0.1, 0.1, 0.1)
+                    DARK_TILE_COLOR
                 };
 
                 let pos = BoardPos::to_world_pos(x, y);

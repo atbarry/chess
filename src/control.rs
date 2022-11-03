@@ -114,6 +114,7 @@ fn undo(
  
         selected.piece = None;
         selected.tile = None;
+        selected.changed = true;
         highlighted.squares.clear();
     }
 }
@@ -130,6 +131,7 @@ fn restart(
  
         selected.piece = None;
         selected.tile = None;
+        selected.changed = true;
         highlighted.squares.clear();
     }
 }

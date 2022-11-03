@@ -15,4 +15,4 @@ opt-level = 3
 [dependencies]
 bevy = "0.8.1"
 bevy-inspector-egui = "0.13.0"
-bevy_tiled_camera = "0.4.1"
+bevy_pixel_camera = "0.2.1"

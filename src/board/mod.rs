@@ -201,9 +201,10 @@ impl Board{
         self.board[board_pos.x][board_pos.y] = piece;
     }
 
-    pub fn is_empty(&self, board_pos: BoardPos) -> bool {
-        self.board[board_pos.x][board_pos.y].is_none()
-    }
+    
+    // pub fn is_empty(&self, board_pos: BoardPos) -> bool {
+    //     self.board[board_pos.x][board_pos.y].is_none()
+    // }
 
     pub fn is_occupied(&self, board_pos: BoardPos) -> bool {
         self.board[board_pos.x][board_pos.y].is_some()

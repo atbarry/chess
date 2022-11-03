@@ -15,12 +15,12 @@ mod input;
 #[cfg(debug_assertions)]
 fn main() {
     App::new()
+        .insert_resource(ImageSettings::default_nearest())
         .add_plugins(DefaultPlugins)
         .add_plugin(WorldInspectorPlugin::new())
         .add_plugin(InputPlugin)
         .add_plugin(ControlPlugin)
         .add_plugin(MovePlugin)
-        .insert_resource(ImageSettings::default_nearest())
         .add_startup_system(create_board)
         .add_startup_system(spawn_camera)
         .run();
@@ -60,11 +60,6 @@ fn spawn_camera(mut commands: Commands) {
     };
 
     commands.spawn_bundle(camera_bundle);
-
-    // let tiled_camera_bun = TiledCameraBundle::unit_cam([BOARD_WIDTH as u32, BOARD_HEIGHT as u32])
-    //     .with_camera_position([0.0, 0.0])
-    //     .with_pixels_per_tile([TILE_SIZE as u32, TILE_SIZE as u32]);
-
 }
 
 fn create_board(mut commands: Commands, server: Res<AssetServer>) {
