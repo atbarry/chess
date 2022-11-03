@@ -1,4 +1,4 @@
-use crate::{constants::{BOARD_HEIGHT, BOARD_WIDTH, TILE_SIZE}, movement::Moveable};
+use crate::{constants::{BOARD_HEIGHT, BOARD_WIDTH, TILE_SIZE}, components::Moveable};
 use bevy::prelude::*;
 
 pub mod spawning;
@@ -60,7 +60,7 @@ pub enum Side{
     Black,
 }
 
-#[derive(Component, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub struct Piece{
     pub piece_type: PieceType,
     pub side: Side,
@@ -69,11 +69,6 @@ pub struct Piece{
     pub distance_moved: u32,
     pub num_moves: u32,
     pub turn_last_moved: u32,
-}
-
-#[derive(Component)]
-pub struct Tile{
-    pub normal_color: Color,
 }
 
 pub struct PieceSpawner {

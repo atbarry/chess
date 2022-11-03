@@ -1,27 +1,17 @@
 use bevy::prelude::*;
-use crate::{board::{Board, Tile, Piece, BChange}, constants::{SELECTED_COLOR, HIGHLIGHT_COLOR, DESTROY_COLOR, SWAP_COLOR, PROMOTE_COLOR}, input::MouseInfo};
+use crate::{board::Board, constants::{SELECTED_COLOR, PIECE_Z_LAYER}, input::MouseInfo, components::{Moveable, Tile}, resources::{HiglightedSquares, SelectedSquare}};
 
-pub struct ControlPlugin;
+pub struct SystemsPlugin;
 
-impl Plugin for ControlPlugin {
+impl Plugin for SystemsPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(SelectedSquare::default())
-            .insert_resource(HiglightedSquares{ squares: Vec::new() })
+        app
             .add_system(on_click)
             .add_system(highlight_squares)
+            .add_system(move_pieces)
             .add_system(undo)
             .add_system(restart);
     }
-}
-
-pub struct SelectedSquare{
-    changed: bool,
-    tile: Option<Entity>,
-    piece: Option<Piece>,
-}
-
-pub struct HiglightedSquares{
-    squares: Vec<(Entity, Color)>,
 }
 
 pub fn on_click(
@@ -136,37 +126,24 @@ fn restart(
     }
 }
 
-impl HiglightedSquares {
-    pub fn from_board_changes(board: &Board, board_changes: Vec<BChange>) -> Self{
-        let mut squares = Vec::new();
-        for change in board_changes{
-            #[allow(unused)]
-            let highlight_info = match change {
-                BChange::Move { start, end } => (board.get_tile_entity(end), HIGHLIGHT_COLOR),
-                BChange::MoveDestroy { start, end, target, } => 
-                    (board.get_tile_entity(end), DESTROY_COLOR),
+fn move_pieces(
+    mut commands: Commands,
+    mut q_moveable: Query<(Entity, &mut Moveable, &mut Transform)>,
+    time: Res<Time>,
+) {
+    fn smoothstep(x: f32) -> f32 {
+        (x * std::f32::consts::PI / 2.0).sin().powi(3)
+    }
 
-                BChange::BothMove { start1, start2, end1, end2} => 
-                    (board.get_tile_entity(start2), SWAP_COLOR),
-                BChange::Promotion { start, end } => 
-                    (board.get_tile_entity(end), PROMOTE_COLOR),
-            };
-
-            squares.push(highlight_info);
-        }
-
-        Self{
-            squares,
+    for (entity, mut moveable, mut transform) in q_moveable.iter_mut() {
+        if moveable.timer.tick(time.delta()).just_finished() {
+            transform.translation = moveable.target_pos.extend(PIECE_Z_LAYER);
+            commands.entity(entity).remove::<Moveable>();
+        } else {
+            transform.translation = moveable.start_pos.lerp(
+                moveable.target_pos, smoothstep(moveable.timer.percent())
+            ).extend(PIECE_Z_LAYER);
         }
     }
 }
 
-impl Default for SelectedSquare {
-    fn default() -> Self {
-        Self{
-            changed: false,
-            tile: None,
-            piece: None,
-        }
-    }
-}

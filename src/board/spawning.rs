@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use crate::constants::{BOARD_HEIGHT, BOARD_WIDTH, TILE_SIZE, PIECE_Z_LAYER, LIGHT_TILE_COLOR, DARK_TILE_COLOR};
-use super::{PieceType, PieceSpawner, Board, Tile, Piece, BoardPos, Side};
+use super::{PieceType, PieceSpawner, Board, Piece, BoardPos, Side};
+use crate::components::Tile;
 
 impl PieceSpawner {
     fn get_image(&self, piece_type: PieceType, side: Side) -> Handle<Image> {

@@ -1,15 +1,16 @@
-use bevy::{prelude::*, render::{texture::{ImageSettings}, camera::ScalingMode}};
+use bevy::{prelude::*, render::{texture::ImageSettings, camera::ScalingMode}};
 use bevy_inspector_egui::WorldInspectorPlugin;
 use board::{Board, PieceSpawner}; 
-use control::ControlPlugin;
+use systems::SystemsPlugin;
 use constants::*;
-use movement::MovePlugin;
 use input::InputPlugin;
+use resources::ResourcesPlugin;
 
-mod control;
-mod movement;
+mod systems;
 mod board;
 mod constants;
+mod components;
+mod resources;
 mod input; 
 
 #[cfg(debug_assertions)]
@@ -18,9 +19,9 @@ fn main() {
         .insert_resource(ImageSettings::default_nearest())
         .add_plugins(DefaultPlugins)
         .add_plugin(WorldInspectorPlugin::new())
+        .add_plugin(ResourcesPlugin)
         .add_plugin(InputPlugin)
-        .add_plugin(ControlPlugin)
-        .add_plugin(MovePlugin)
+        .add_plugin(SystemsPlugin)
         .add_startup_system(create_board)
         .add_startup_system(spawn_camera)
         .run();
@@ -31,7 +32,7 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugin(InputPlugin)
-        .add_plugin(ControlPlugin)
+        .add_plugin(SystemsPlugin)
         .add_plugin(MovePlugin)
         .insert_resource(ImageSettings::default_nearest())
         .add_startup_system(create_board)

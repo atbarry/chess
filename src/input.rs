@@ -1,25 +1,15 @@
 use bevy::{prelude::*, render::camera::RenderTarget};
-use crate::control::on_click;
+use crate::systems::on_click;
 use crate::board::BoardPos;
 
 pub struct InputPlugin; 
 
 impl Plugin for InputPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(MouseInfo{
-            world_cords: None,
-            board_pos: None,
-            just_clicked: false,
-        }).add_system(update_mouse
+        app.add_system(update_mouse
             .before(on_click)
         );
     }
-}
-
-pub struct MouseInfo {
-    pub world_cords: Option<Vec3>,
-    pub board_pos: Option<BoardPos>,
-    pub just_clicked: bool, 
 }
 
 fn update_mouse(
