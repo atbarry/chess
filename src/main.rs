@@ -30,11 +30,11 @@ fn main() {
 #[cfg(not(debug_assertions))]
 fn main() {
     App::new()
+        .insert_resource(ImageSettings::default_nearest())
         .add_plugins(DefaultPlugins)
+        .add_plugin(ResourcesPlugin)
         .add_plugin(InputPlugin)
         .add_plugin(SystemsPlugin)
-        .add_plugin(MovePlugin)
-        .insert_resource(ImageSettings::default_nearest())
         .add_startup_system(create_board)
         .add_startup_system(spawn_camera)
         .run();
