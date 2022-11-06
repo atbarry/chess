@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::{board::{BoardPos, Piece, Board, BChange}, constants::{DESTROY_COLOR, HIGHLIGHT_COLOR, SWAP_COLOR, PROMOTE_COLOR}};
+use crate::{board::{BoardPos, Piece, Board, BChange}, constants::{DESTROY_COLOR, MOVE_COLOR, SWAP_COLOR, PROMOTE_COLOR, PUSH_PREMOTE_COLOR}};
 
 pub struct ResourcesPlugin;
 
@@ -29,7 +29,6 @@ pub struct SelectedSquare{
     pub tile: Option<Entity>,
     pub piece: Option<Piece>,
 }
-
 pub struct HiglightedSquares{
     pub squares: Vec<(Entity, Color)>,
 }
@@ -39,16 +38,16 @@ impl HiglightedSquares {
     pub fn from_board_changes(board: &Board, board_changes: Vec<BChange>) -> Self{
         let mut squares = Vec::new();
         for change in board_changes{
-            #[allow(unused)]
             let highlight_info = match change {
-                BChange::Move { start, end } => (board.get_tile_entity(end), HIGHLIGHT_COLOR),
-                BChange::MoveDestroy { start, end, target, } => 
+                BChange::Move { end, .. } => (board.get_tile_entity(end), MOVE_COLOR),
+                BChange::MoveDestroy { end, ..} => 
                     (board.get_tile_entity(end), DESTROY_COLOR),
-
-                BChange::BothMove { start1, start2, end1, end2} => 
+                BChange::BothMove { start2, ..} => 
                     (board.get_tile_entity(start2), SWAP_COLOR),
-                BChange::Promotion { start, end } => 
+                BChange::Promotion { end, ..} => 
                     (board.get_tile_entity(end), PROMOTE_COLOR),
+                BChange::PushPremote { start2, ..} => 
+                    (board.get_tile_entity(start2), PUSH_PREMOTE_COLOR),
             };
 
             squares.push(highlight_info);

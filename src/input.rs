@@ -1,4 +1,5 @@
 use bevy::{prelude::*, render::camera::RenderTarget};
+use crate::resources::MouseInfo;
 use crate::systems::on_click;
 use crate::board::BoardPos;
 
@@ -26,9 +27,9 @@ fn update_mouse(
     };
 
     mouse.just_clicked = mouse_button.just_pressed(MouseButton::Left);
-    if mouse.just_clicked {
-        dbg!("Just clicked the mouse at", mouse.board_pos);
-    }
+    // if mouse.just_clicked {
+    //     dbg!("Just clicked the mouse at", mouse.board_pos);
+    // }
 }
 
 fn mouse_to_world(

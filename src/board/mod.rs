@@ -21,6 +21,7 @@ pub struct BoardPos{
     pub y: usize,
 }
 
+#[derive(Clone)]
 pub enum BChange{
     Move {
         start: BoardPos,
@@ -40,7 +41,13 @@ pub enum BChange{
     Promotion {
         start: BoardPos,
         end: BoardPos,
-    }
+    },
+    PushPremote {
+        start1: BoardPos,
+        start2: BoardPos,
+        end1: BoardPos,
+        end2: BoardPos,
+    },
 }
 
 
@@ -115,6 +122,7 @@ impl Board{
         side.is_friendly(&self.turn)
     }
 
+
     pub fn apply_board_change(&mut self, commands: &mut Commands, board_change: BChange) {
         self.save();
 
@@ -128,7 +136,7 @@ impl Board{
                 self.move_piece(commands, start, end);
             },
             BChange::BothMove { start1, start2, end1, end2 } => {
-                self.swap_piece(commands, start1, start2, end1, end2);
+                self.move_both_pieces(commands, start1, start2, end1, end2);
             },
             BChange::Promotion { start, end } => {
                 let mut piece = self.get_piece(start).unwrap();
@@ -141,6 +149,12 @@ impl Board{
 
                 self.move_piece(commands, start, end);
             },
+            BChange::PushPremote { start1, start2, end1, end2 } => {
+                let mut piece = self.get_piece(start2).unwrap();
+                self.promote_piece(commands, &mut piece, PieceType::Rook);
+                self.set_piece(Some(piece), start2);
+                self.move_both_pieces(commands, start1, start2, end1, end2)
+            }
         }
 
         // finally change the turn
@@ -160,7 +174,7 @@ impl Board{
         self.set_piece(Some(piece), end);
     }
 
-    fn swap_piece(&mut self, commands: &mut Commands, start1: BoardPos, start2: BoardPos, end1: BoardPos, end2: BoardPos) {
+    fn move_both_pieces(&mut self, commands: &mut Commands, start1: BoardPos, start2: BoardPos, end1: BoardPos, end2: BoardPos) {
         let mut piece1= self.take(start1).unwrap();
         let mut piece2 = self.take(start2).unwrap();
 
@@ -203,6 +217,16 @@ impl Board{
 
     pub fn is_occupied(&self, board_pos: BoardPos) -> bool {
         self.board[board_pos.x][board_pos.y].is_some()
+    }
+
+    pub fn is_occupied_and_friendly(&self, board_pos: BoardPos, other: Side) -> bool {
+        if let Some(piece) = self.get_piece(board_pos) {
+            if piece.side.is_friendly(&other) {
+                return true;
+            }
+        }
+        
+        false
     }
 
     pub fn take(&mut self, board_pos: BoardPos) -> Option<Piece> {
@@ -259,22 +283,22 @@ impl Side {
 
 impl BChange {
     pub fn click_pos_to_activate_change(&self) -> BoardPos {
-        #[allow(unused)]
         match self {
-            BChange::Move { start, end } => *end,
-            BChange::MoveDestroy { start, end, target } => *end,
-            BChange::BothMove { start1, start2, end1, end2 } => *start2,
-            BChange::Promotion { start, end } => *end,
+            BChange::Move { end, .. } => *end,
+            BChange::MoveDestroy { end, .. } => *end,
+            BChange::BothMove { start2, .. } => *start2,
+            BChange::Promotion { end, .. } => *end,
+            BChange::PushPremote { start2, ..} => *start2,
         }
     }
 
     pub fn convert_to_promotion(&self) -> BChange {
-        #[allow(unused)]
         match self {
             BChange::Move { start, end } => BChange::Promotion { start: *start, end: *end },
-            BChange::MoveDestroy { start, end, target } => BChange::Promotion { start: *start, end: *end },
-            BChange::BothMove { start1, start2, end1, end2 } => BChange::Promotion { start: *start1, end: *end1 },
-            BChange::Promotion { start, end } => BChange::Promotion { start: *start, end: *end },
+            BChange::MoveDestroy { start, end, .. } => BChange::Promotion { start: *start, end: *end },
+            BChange::BothMove { start1, end1, start2, end2 } => BChange::PushPremote { start1: *start1, end1: *end1, start2: *start2, end2: *end2 },
+            BChange::Promotion { .. } => self.clone(),
+            BChange::PushPremote { .. } => self.clone(),
         }
     }
 }

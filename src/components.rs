@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::constants::{PIECE_MOVE_TIME};
+use crate::constants::PIECE_MOVE_TIME;
 
 #[derive(Component)]
 pub struct Moveable {
@@ -16,7 +16,7 @@ pub struct Tile{
 
 impl Moveable {
     pub fn new(start_pos: Vec2, target_pos: Vec2) -> Self {
-        println!("Moving from {:?} to {:?}", start_pos, target_pos);
+        // dbg!("Moving from {:?} to {:?}", start_pos, target_pos);
         Self {
             start_pos,
             target_pos,

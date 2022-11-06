@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use crate::{board::Board, constants::{SELECTED_COLOR, PIECE_Z_LAYER}, input::MouseInfo, components::{Moveable, Tile}, resources::{HiglightedSquares, SelectedSquare}};
+use crate::{board::Board, constants::{SELECTED_COLOR, PIECE_Z_LAYER}, resources::MouseInfo, components::{Moveable, Tile}, resources::{HiglightedSquares, SelectedSquare}};
 
 pub struct SystemsPlugin;
 
@@ -37,7 +37,7 @@ pub fn on_click(
     }
 
     let target_square = target_square.expect("Should not fail if it makes it here");
-    println!("Clicked on board at: {}, {}", target_square.x, target_square.y);
+    // dbg!("Clicked on board at: {}, {}", target_square.x, target_square.y);
 
     if let Some(piece) = &selected.piece {
         if let Some(change) = board.check_valid_change(piece.board_pos, target_square) {

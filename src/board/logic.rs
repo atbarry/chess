@@ -277,7 +277,7 @@ impl Board {
                 add_normal_move(Dir::UpLeft);
 
                 // check if the pawn can be promoted
-                if piece.board_pos.y == BOARD_HEIGHT - 1 {
+                if piece.board_pos.y == BOARD_HEIGHT - 2 {
                     return moves.iter().map(|f| f.convert_to_promotion()).collect();
                 }
 
@@ -376,15 +376,38 @@ impl Board {
             };
 
             if let Some(next_square) = last_square.square_in_dir(dir) {
-                if self.is_occupied(next_square) {
+                if self.is_occupied_and_friendly(next_square, piece.side) {
                     if let Some(push_move) = next_square.square_in_dir(dir){
                         if !self.is_occupied(push_move) {
-                            moves.push(BothMove{
+                            let mut new_move = BothMove{
                                 start1: selected_square,
                                 start2: next_square,
                                 end1: next_square,
                                 end2: push_move,
-                            });
+                            };
+                            
+                            let Some(pushed_piece) = self.get_piece(next_square) else {
+                                panic!("This should not panic")
+                            };
+
+                            if pushed_piece.piece_type == PieceType::Pawn {
+                                match pushed_piece.side {
+                                    Side::White => {
+                                        if pushed_piece.board_pos.y == BOARD_HEIGHT - 2 {
+                                            new_move = new_move.convert_to_promotion();
+                                        }
+                                    },
+                                    Side::Black => {
+                                        if pushed_piece.board_pos.y == 1 {
+                                            new_move = new_move.convert_to_promotion();
+                                        }
+                                    },
+                                }
+                            }
+                            
+                            
+                            
+                            moves.push(new_move);
                         }
                     }
                 }
