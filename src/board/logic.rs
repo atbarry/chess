@@ -377,7 +377,7 @@ impl Board {
             };
 
             // this means that it has to be an enemy
-            if self.is_occupied(last_square) {
+            if self.is_occupied(last_square) && slide_moves.len() > 0 {
                 moves.extend(slide_moves);
                 return;
             }
