@@ -1,31 +1,39 @@
-use bevy::{prelude::*, render::{texture::ImageSettings, camera::ScalingMode}};
+use std::thread;
+
+use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
+use bevy::window::WindowMode;
+use bevy::{
+    prelude::*,
+    render::{camera::ScalingMode, texture::ImageSettings},
+    window::PresentMode,
+};
 use bevy_inspector_egui::WorldInspectorPlugin;
-use board::{Board, PieceSpawner}; 
-use systems::SystemsPlugin;
+use board::{Board, PieceSpawner};
 use constants::*;
 use input::InputPlugin;
 use resources::ResourcesPlugin;
+use systems::SystemsPlugin;
 
-mod systems;
 mod board;
-mod constants;
 mod components;
+mod constants;
+mod input;
 mod resources;
-mod input; 
+mod systems;
 
 #[cfg(debug_assertions)]
 fn main() {
     App::new()
         .add_plugin(SetupPlugin)
         .add_plugin(WorldInspectorPlugin::new())
+        .add_plugin(FrameTimeDiagnosticsPlugin::default())
+        .add_plugin(LogDiagnosticsPlugin::default())
         .run();
 }
 
 #[cfg(not(debug_assertions))]
 fn main() {
-    App::new()
-        .add_plugin(SetupPlugin)
-        .run();
+    App::new().add_plugin(SetupPlugin).run();
 }
 
 struct SetupPlugin;
@@ -33,10 +41,11 @@ struct SetupPlugin;
 impl Plugin for SetupPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(ImageSettings::default_nearest())
-            .insert_resource(WindowDescriptor{
+            .insert_resource(WindowDescriptor {
                 width: 1000.0,
                 height: 1000.0,
                 title: "Chess".to_owned(),
+                present_mode: PresentMode::Fifo,
                 ..Default::default()
             })
             .add_plugins(DefaultPlugins)
@@ -44,14 +53,15 @@ impl Plugin for SetupPlugin {
             .add_plugin(InputPlugin)
             .add_plugin(SystemsPlugin)
             .add_startup_system(create_board)
-            .add_startup_system(camera_setup);
+            .add_startup_system(camera_setup)
+            .add_system(frame_rate_limiter);
     }
 }
 
 fn camera_setup(mut commands: Commands) {
     let size = TILE_SIZE * (BOARD_WIDTH) as f32;
 
-    let camera_bundle = Camera2dBundle{
+    let camera_bundle = Camera2dBundle {
         transform: Transform::from_xyz(
             BOARD_WIDTH as f32 * TILE_SIZE / 2.0,
             BOARD_HEIGHT as f32 * TILE_SIZE / 2.0,
@@ -60,7 +70,10 @@ fn camera_setup(mut commands: Commands) {
 
         projection: OrthographicProjection {
             far: 1000.0,
-            scaling_mode: ScalingMode::Auto { min_width: size, min_height: size},
+            scaling_mode: ScalingMode::Auto {
+                min_width: size,
+                min_height: size,
+            },
             ..Default::default()
         },
         ..Default::default()
@@ -71,7 +84,7 @@ fn camera_setup(mut commands: Commands) {
 
 fn create_board(mut commands: Commands, server: Res<AssetServer>) {
     // Load the sprites
-    let spawner = PieceSpawner{
+    let spawner = PieceSpawner {
         white_king: server.load("pieces/white_king.png"),
         white_queen: server.load("pieces/white_queen.png"),
         white_rook: server.load("pieces/white_rook.png"),
@@ -93,9 +106,6 @@ fn create_board(mut commands: Commands, server: Res<AssetServer>) {
     commands.insert_resource(board);
 }
 
-
-
-
-
-
-
+fn frame_rate_limiter() {
+    thread::sleep(SLEEP_DUR);
+}

@@ -16,3 +16,4 @@ opt-level = 3
 bevy = "0.8.1"
 bevy-inspector-egui = "0.13.0"
 bevy_pixel_camera = "0.2.1"
+bevy_framepace = "0.7.0"

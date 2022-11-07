@@ -1,9 +1,13 @@
 use crate::constants::BOARD_HEIGHT;
 
-use super::{Board, BoardPos, PieceType, Side, Piece, BChange, BChange::{Move, MoveDestroy, BothMove}};
+use super::{
+    BChange,
+    BChange::{BothMove, Move, MoveDestroy},
+    Board, BoardPos, Piece, PieceType, Side,
+};
 
 #[derive(Clone, Copy)]
-enum Dir{
+enum Dir {
     Up,
     Down,
     Left,
@@ -15,7 +19,7 @@ enum Dir{
     Custom(i32, i32),
 }
 
-impl BoardPos{
+impl BoardPos {
     fn square_in_dir(&self, dir: Dir) -> Option<BoardPos> {
         let convert_to_option = |x, y| -> Option<BoardPos> {
             if x < 0 || y < 0 {
@@ -44,7 +48,6 @@ impl BoardPos{
     }
 }
 
-
 fn slide(dir: Dir, side: Side, start: BoardPos, board: &Board) -> Vec<BChange> {
     let mut moves = Vec::new();
     let mut current_square = start;
@@ -57,12 +60,19 @@ fn slide(dir: Dir, side: Side, start: BoardPos, board: &Board) -> Vec<BChange> {
         match board.get_piece(current_square) {
             Some(target_piece) => {
                 if side.is_enemy(&target_piece.side) {
-                    let board_change = MoveDestroy { start, end: current_square, target: current_square };
+                    let board_change = MoveDestroy {
+                        start,
+                        end: current_square,
+                        target: current_square,
+                    };
                     moves.push(board_change);
                 }
                 break;
-            },
-            None => moves.push(Move { start, end: current_square}),
+            }
+            None => moves.push(Move {
+                start,
+                end: current_square,
+            }),
         }
     }
 
@@ -72,7 +82,7 @@ fn slide(dir: Dir, side: Side, start: BoardPos, board: &Board) -> Vec<BChange> {
 impl Board {
     pub fn check_valid_change(&self, start: BoardPos, click_pos: BoardPos) -> Option<BChange> {
         for change in self.get_possible_moves(start) {
-            if change.click_pos_to_activate_change() == click_pos{
+            if change.click_pos_to_activate_change() == click_pos {
                 return Some(change);
             }
         }
@@ -80,14 +90,14 @@ impl Board {
         None
     }
 
-    pub fn get_possible_moves(&self, selected_square: BoardPos) -> Vec<BChange>{
+    pub fn get_possible_moves(&self, selected_square: BoardPos) -> Vec<BChange> {
         let piece = self.get_piece(selected_square).unwrap(); // if this fails we have a bug
 
         // not the correct turn then no moves
         if !self.is_turn(piece.side) {
             return Vec::new();
         }
-        
+
         match &piece.piece_type {
             PieceType::King => self.get_king_moves(selected_square, piece),
             PieceType::Queen => self.get_queen_moves(selected_square, piece),
@@ -98,30 +108,39 @@ impl Board {
         }
     }
 
-    fn get_king_moves(&self, selected_square: BoardPos, piece: Piece) -> Vec<BChange>{
+    fn get_king_moves(&self, selected_square: BoardPos, piece: Piece) -> Vec<BChange> {
         let mut moves = Vec::new();
         let side = piece.side;
-        
+
         let mut add_move = |dir: Dir| {
             let square = match selected_square.square_in_dir(dir) {
                 Some(square) => square,
                 None => return,
             };
-            
+
             match self.get_piece(square) {
                 Some(target_piece) => {
                     if side.is_enemy(&target_piece.side) {
-                        moves.push(MoveDestroy { start: piece.board_pos, end: square, target: square });
+                        moves.push(MoveDestroy {
+                            start: piece.board_pos,
+                            end: square,
+                            target: square,
+                        });
                     }
-                },
-                None => moves.push(Move { start: piece.board_pos, end: square }),
+                }
+                None => moves.push(Move {
+                    start: piece.board_pos,
+                    end: square,
+                }),
             };
         };
 
         let check_castling = || -> Vec<BChange> {
             let mut changes = Vec::new();
 
-            if piece.num_moves > 0 {return changes}
+            if piece.num_moves > 0 {
+                return changes;
+            }
 
             // Check if the king can castle to the right
             let mut open_squares = true;
@@ -131,7 +150,7 @@ impl Board {
                     None => break,
                 };
 
-                if self.is_occupied(square){
+                if self.is_occupied(square) {
                     open_squares = false;
                     break;
                 }
@@ -142,10 +161,10 @@ impl Board {
 
                 if let Some(rook) = self.get_piece(rook_square) {
                     if rook.piece_type == PieceType::Rook && rook.num_moves == 0 {
-                        changes.push(BothMove { 
-                            start1: selected_square, 
-                            end1: selected_square.square_in_dir(Dir::Custom(2, 0)).unwrap(), 
-                            start2: rook_square, 
+                        changes.push(BothMove {
+                            start1: selected_square,
+                            end1: selected_square.square_in_dir(Dir::Custom(2, 0)).unwrap(),
+                            start2: rook_square,
                             end2: selected_square.square_in_dir(Dir::Right).unwrap(),
                         });
                     }
@@ -168,13 +187,13 @@ impl Board {
 
             if open_squares {
                 let rook_square = selected_square.square_in_dir(Dir::Custom(-4, 0)).unwrap();
-                
+
                 if let Some(rook) = self.get_piece(rook_square) {
                     if rook.piece_type == PieceType::Rook && rook.num_moves == 0 {
-                        changes.push(BothMove { 
-                            start1: selected_square, 
-                            end1: selected_square.square_in_dir(Dir::Custom(-2, 0)).unwrap(), 
-                            start2: rook_square, 
+                        changes.push(BothMove {
+                            start1: selected_square,
+                            end1: selected_square.square_in_dir(Dir::Custom(-2, 0)).unwrap(),
+                            start2: rook_square,
                             end2: selected_square.square_in_dir(Dir::Left).unwrap(),
                         });
                     }
@@ -183,7 +202,7 @@ impl Board {
 
             changes
         };
-        
+
         add_move(Dir::Up);
         add_move(Dir::Down);
         add_move(Dir::Left);
@@ -191,13 +210,13 @@ impl Board {
         add_move(Dir::UpRight);
         add_move(Dir::UpLeft);
         add_move(Dir::DownRight);
-        add_move(Dir::DownLeft); 
+        add_move(Dir::DownLeft);
 
         moves.append(&mut check_castling());
         moves
     }
 
-    fn get_pawn_moves(&self, selected_square: BoardPos, piece: Piece) -> Vec<BChange>{
+    fn get_pawn_moves(&self, selected_square: BoardPos, piece: Piece) -> Vec<BChange> {
         let mut moves = Vec::new();
         let side = piece.side;
 
@@ -208,28 +227,37 @@ impl Board {
             };
 
             match self.get_piece(square) {
-                Some(target_piece) =>  {
+                Some(target_piece) => {
                     // checks for diagonal attack
                     match &dir {
                         Dir::Up | Dir::Down => (),
                         _ => {
                             if side.is_enemy(&target_piece.side) {
-                                moves.push(MoveDestroy { start: selected_square, end: square, target: square });
+                                moves.push(MoveDestroy {
+                                    start: selected_square,
+                                    end: square,
+                                    target: square,
+                                });
                             }
                         }
-                        
                     }
-                },
+                }
                 None => match &dir {
                     // check if it can move forward
-                    Dir::Up => moves.push(Move { start: selected_square, end: square }),
-                    Dir::Down => moves.push(Move { start: selected_square, end: square }),
+                    Dir::Up => moves.push(Move {
+                        start: selected_square,
+                        end: square,
+                    }),
+                    Dir::Down => moves.push(Move {
+                        start: selected_square,
+                        end: square,
+                    }),
                     _ => (),
                 },
             }
         };
 
-        let check_double_space_move = |dir: Dir| -> Option<BChange>{
+        let check_double_space_move = |dir: Dir| -> Option<BChange> {
             if piece.num_moves != 0 {
                 return None;
             }
@@ -248,20 +276,24 @@ impl Board {
                 return None;
             }
 
-            Some(Move{start: selected_square, end: two_square})
+            Some(Move {
+                start: selected_square,
+                end: two_square,
+            })
         };
 
-        let check_en_passant = |dir: Dir| -> bool{
+        let check_en_passant = |dir: Dir| -> bool {
             let square = match selected_square.square_in_dir(dir) {
                 Some(square) => square,
                 None => return false,
             };
 
             if let Some(target_piece) = self.get_piece(square) {
-                if side.is_enemy(&target_piece.side) 
+                if side.is_enemy(&target_piece.side)
                     && target_piece.piece_type == PieceType::Pawn
                     && target_piece.num_moves == 1
-                    && target_piece.turns_since_last_move(self.turn_num) == 1 
+                    && target_piece.turns_since_last_move(self.turn_num) == 1
+                    && target_piece.distance_moved == 2
                 {
                     return true;
                 }
@@ -287,8 +319,8 @@ impl Board {
 
                 // check for en passant
                 if check_en_passant(Dir::Right) {
-                    let board_change = MoveDestroy { 
-                        start: piece.board_pos, 
+                    let board_change = MoveDestroy {
+                        start: piece.board_pos,
                         end: selected_square.square_in_dir(Dir::UpRight).unwrap(),
                         target: selected_square.square_in_dir(Dir::Right).unwrap(),
                     };
@@ -296,14 +328,14 @@ impl Board {
                 }
 
                 if check_en_passant(Dir::Left) {
-                    let board_change = MoveDestroy { 
-                        start: piece.board_pos, 
+                    let board_change = MoveDestroy {
+                        start: piece.board_pos,
                         end: selected_square.square_in_dir(Dir::UpLeft).unwrap(),
                         target: selected_square.square_in_dir(Dir::Left).unwrap(),
                     };
                     moves.push(board_change);
                 }
-            },
+            }
             Side::Black => {
                 add_normal_move(Dir::Down);
                 add_normal_move(Dir::DownRight);
@@ -320,8 +352,8 @@ impl Board {
 
                 // check for en passant
                 if check_en_passant(Dir::Right) {
-                    let board_change = MoveDestroy { 
-                        start: piece.board_pos, 
+                    let board_change = MoveDestroy {
+                        start: piece.board_pos,
                         end: selected_square.square_in_dir(Dir::DownRight).unwrap(),
                         target: selected_square.square_in_dir(Dir::Right).unwrap(),
                     };
@@ -329,20 +361,20 @@ impl Board {
                 }
 
                 if check_en_passant(Dir::Left) {
-                    let board_change = MoveDestroy { 
-                        start: piece.board_pos, 
+                    let board_change = MoveDestroy {
+                        start: piece.board_pos,
                         end: selected_square.square_in_dir(Dir::DownLeft).unwrap(),
                         target: selected_square.square_in_dir(Dir::Left).unwrap(),
                     };
                     moves.push(board_change);
                 }
-            },
+            }
         }
 
         moves
     }
 
-    fn get_queen_moves(&self, selected_square: BoardPos, piece: Piece) -> Vec<BChange>{
+    fn get_queen_moves(&self, selected_square: BoardPos, piece: Piece) -> Vec<BChange> {
         let mut moves = Vec::new();
         let side = piece.side;
 
@@ -363,14 +395,14 @@ impl Board {
         moves
     }
 
-    fn get_rook_moves(&self, selected_square: BoardPos, piece: Piece) -> Vec<BChange>{
+    fn get_rook_moves(&self, selected_square: BoardPos, piece: Piece) -> Vec<BChange> {
         let mut moves = Vec::new();
         let side = piece.side;
 
         let mut add_move = |dir: Dir| {
             let slide_moves = slide(dir, side, selected_square, self);
-            
-            // check for push move 
+
+            // check for push move
             let last_square = match slide_moves.len() {
                 0 => selected_square,
                 _ => slide_moves.last().unwrap().click_pos_to_activate_change(),
@@ -384,36 +416,37 @@ impl Board {
 
             if let Some(next_square) = last_square.square_in_dir(dir) {
                 if self.is_occupied_and_friendly(next_square, piece.side) {
-                    if let Some(push_move) = next_square.square_in_dir(dir){
+                    if let Some(push_move) = next_square.square_in_dir(dir) {
                         if !self.is_occupied(push_move) {
-                            let mut new_move = BothMove{
+                            let mut new_move = BothMove {
                                 start1: selected_square,
                                 start2: next_square,
                                 end1: next_square,
                                 end2: push_move,
                             };
-                            
+
                             let Some(pushed_piece) = self.get_piece(next_square) else {
                                 panic!("This should not panic")
                             };
 
                             if pushed_piece.piece_type == PieceType::Pawn {
+                                dbg!(push_move.y);
                                 match pushed_piece.side {
                                     Side::White => {
-                                        if pushed_piece.board_pos.y == BOARD_HEIGHT - 2 {
+                                        if pushed_piece.board_pos.y == BOARD_HEIGHT - 2
+                                            && push_move.y == BOARD_HEIGHT - 1
+                                        {
                                             new_move = new_move.convert_to_promotion();
                                         }
-                                    },
+                                    }
                                     Side::Black => {
-                                        if pushed_piece.board_pos.y == 1 {
+                                        if pushed_piece.board_pos.y == 1 && push_move.y == 0 {
                                             new_move = new_move.convert_to_promotion();
                                         }
-                                    },
+                                    }
                                 }
                             }
-                            
-                            
-                            
+
                             moves.push(new_move);
                         }
                     }
@@ -431,7 +464,7 @@ impl Board {
         moves
     }
 
-    fn get_bishop_moves(&self, selected_square: BoardPos, piece: Piece) -> Vec<BChange>{
+    fn get_bishop_moves(&self, selected_square: BoardPos, piece: Piece) -> Vec<BChange> {
         let mut moves = Vec::new();
         let side = piece.side;
 
@@ -448,7 +481,7 @@ impl Board {
         moves
     }
 
-    fn get_knight_moves(&self, selected_square: BoardPos, piece: Piece) -> Vec<BChange>{
+    fn get_knight_moves(&self, selected_square: BoardPos, piece: Piece) -> Vec<BChange> {
         let mut moves = Vec::new();
         let side = piece.side;
 
@@ -461,12 +494,17 @@ impl Board {
             match self.get_piece(square) {
                 Some(target_piece) => {
                     if side.is_enemy(&target_piece.side) {
-                        moves.push(
-                            MoveDestroy { start: selected_square, end: square, target: square }
-                        );
+                        moves.push(MoveDestroy {
+                            start: selected_square,
+                            end: square,
+                            target: square,
+                        });
                     }
-                },
-                None => moves.push(Move { start: selected_square, end: square }),
+                }
+                None => moves.push(Move {
+                    start: selected_square,
+                    end: square,
+                }),
             }
         };
 

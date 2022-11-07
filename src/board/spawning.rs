@@ -1,7 +1,9 @@
-use bevy::prelude::*;
-use crate::constants::{BOARD_HEIGHT, BOARD_WIDTH, TILE_SIZE, PIECE_Z_LAYER, LIGHT_TILE_COLOR, DARK_TILE_COLOR};
-use super::{PieceType, PieceSpawner, Board, Piece, BoardPos, Side};
+use super::{Board, BoardPos, Piece, PieceSpawner, PieceType, Side};
 use crate::components::Tile;
+use crate::constants::{
+    BOARD_HEIGHT, BOARD_WIDTH, DARK_TILE_COLOR, LIGHT_TILE_COLOR, PIECE_Z_LAYER, TILE_SIZE,
+};
+use bevy::prelude::*;
 
 impl PieceSpawner {
     fn get_image(&self, piece_type: PieceType, side: Side) -> Handle<Image> {
@@ -21,17 +23,25 @@ impl PieceSpawner {
         }
     }
 
-    fn spawn_piece(&self, commands: &mut Commands, piece_type: PieceType, side: Side, board_pos: BoardPos) -> Option<Piece> {
+    fn spawn_piece(
+        &self,
+        commands: &mut Commands,
+        piece_type: PieceType,
+        side: Side,
+        board_pos: BoardPos,
+    ) -> Option<Piece> {
         let image = self.get_image(piece_type, side);
         let world_pos = BoardPos::to_world_pos(board_pos.x, board_pos.y);
 
-        let entity = commands.spawn_bundle(SpriteBundle {
-            texture: image,
-            transform: Transform::from_xyz(world_pos.x, world_pos.y, PIECE_Z_LAYER),
-            ..Default::default()
-        }).id();
+        let entity = commands
+            .spawn_bundle(SpriteBundle {
+                texture: image,
+                transform: Transform::from_xyz(world_pos.x, world_pos.y, PIECE_Z_LAYER),
+                ..Default::default()
+            })
+            .id();
 
-        let piece = Piece{
+        let piece = Piece {
             piece_type,
             side,
             entity,
@@ -44,23 +54,25 @@ impl PieceSpawner {
         Some(piece)
     }
 
-    fn respawn_piece(&self, commands: &mut Commands, mut piece: Piece) -> Piece{
+    fn respawn_piece(&self, commands: &mut Commands, mut piece: Piece) -> Piece {
         let image = self.get_image(piece.piece_type, piece.side);
         let world_pos = piece.board_pos.self_to_world_pos();
 
-        let id = commands.spawn_bundle(SpriteBundle {
-            texture: image,
-            transform: Transform::from_xyz(world_pos.x, world_pos.y, PIECE_Z_LAYER),
-            ..Default::default()
-        }).id();
+        let id = commands
+            .spawn_bundle(SpriteBundle {
+                texture: image,
+                transform: Transform::from_xyz(world_pos.x, world_pos.y, PIECE_Z_LAYER),
+                ..Default::default()
+            })
+            .id();
 
         piece.entity = id;
         piece
     }
 }
-impl Board{
-    pub fn new(spawner: PieceSpawner) -> Self{
-        Self{
+impl Board {
+    pub fn new(spawner: PieceSpawner) -> Self {
+        Self {
             board: vec![vec![None; BOARD_WIDTH]; BOARD_HEIGHT],
             tiles: Vec::new(),
             spawner,
@@ -70,8 +82,8 @@ impl Board{
         }
     }
 
-    pub fn undo_last_change(&mut self, commands: &mut Commands){
-        if let Some(board) = self.previous.pop(){
+    pub fn undo_last_change(&mut self, commands: &mut Commands) {
+        if let Some(board) = self.previous.pop() {
             dbg!("Undoing last change");
             self.clear_board(commands);
             dbg!("Cleared board");
@@ -82,10 +94,10 @@ impl Board{
         }
     }
 
-    fn clear_board(&mut self, commands: &mut Commands){
-        for row in self.board.iter_mut(){
-            for square in row.iter_mut(){
-                if let Some(piece) = square{
+    fn clear_board(&mut self, commands: &mut Commands) {
+        for row in self.board.iter_mut() {
+            for square in row.iter_mut() {
+                if let Some(piece) = square {
                     commands.entity(piece.entity).despawn();
                 }
                 *square = None;
@@ -93,10 +105,10 @@ impl Board{
         }
     }
 
-    fn respawn_pieces(&mut self, commands: &mut Commands){
-        for row in self.board.iter_mut(){
-            for square in row.iter_mut(){
-                if let Some(piece) = square{
+    fn respawn_pieces(&mut self, commands: &mut Commands) {
+        for row in self.board.iter_mut() {
+            for square in row.iter_mut() {
+                if let Some(piece) = square {
                     *piece = self.spawner.respawn_piece(commands, piece.clone());
                 }
             }
@@ -112,50 +124,58 @@ impl Board{
         self.spawn_pieces(commands);
     }
 
-    pub fn promote_piece(&mut self, commands: &mut Commands, piece: &mut Piece, new_type: PieceType) {
+    pub fn promote_piece(
+        &mut self,
+        commands: &mut Commands,
+        piece: &mut Piece,
+        new_type: PieceType,
+    ) {
         piece.piece_type = new_type;
         // get rid of the old entity
         commands.entity(piece.entity).despawn();
         // spawn a new entity with the new type
-        *piece = self.spawner.spawn_piece(commands, new_type, piece.side, piece.board_pos).unwrap();
+        *piece = self
+            .spawner
+            .spawn_piece(commands, new_type, piece.side, piece.board_pos)
+            .unwrap();
     }
-    
-    pub fn spawn_tiles(&mut self, commands: &mut Commands){
-        for x in 0..BOARD_WIDTH{
+
+    pub fn spawn_tiles(&mut self, commands: &mut Commands) {
+        for x in 0..BOARD_WIDTH {
             let mut row = Vec::new();
-            for y in 0..BOARD_HEIGHT{
-                let color =  if (x + y) % 2 == 0{
+            for y in 0..BOARD_HEIGHT {
+                let color = if (x + y) % 2 == 0 {
                     LIGHT_TILE_COLOR
-                }else{
+                } else {
                     DARK_TILE_COLOR
                 };
 
                 let pos = BoardPos::to_world_pos(x, y);
 
-                let tile = commands.spawn_bundle(SpriteBundle{
-                    // texture,
-                    transform: Transform::from_xyz(pos.x, pos.y, 0.0),
-                    sprite: Sprite{
-                        custom_size: Some(Vec2::new(TILE_SIZE, TILE_SIZE)),
-                        color,
+                let tile = commands
+                    .spawn_bundle(SpriteBundle {
+                        // texture,
+                        transform: Transform::from_xyz(pos.x, pos.y, 0.0),
+                        sprite: Sprite {
+                            custom_size: Some(Vec2::new(TILE_SIZE, TILE_SIZE)),
+                            color,
+                            ..Default::default()
+                        },
                         ..Default::default()
-                    },
-                    ..Default::default()
-                })
-                .insert(Tile{
-                    normal_color: color,
-                })
-                .id();
+                    })
+                    .insert(Tile {
+                        normal_color: color,
+                    })
+                    .id();
                 row.push(tile);
             }
             self.tiles.push(row);
         }
     }
 
-
     pub fn spawn_pieces(&mut self, commands: &mut Commands) {
         // Spawn pawns
-        for x in 0..BOARD_WIDTH{
+        for x in 0..BOARD_WIDTH {
             self.board[x][1] = self.spawner.spawn_piece(
                 commands,
                 PieceType::Pawn,
@@ -289,4 +309,3 @@ impl Board{
         );
     }
 }
-

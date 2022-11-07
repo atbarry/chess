@@ -1,15 +1,13 @@
-use bevy::{prelude::*, render::camera::RenderTarget};
+use crate::board::BoardPos;
 use crate::resources::MouseInfo;
 use crate::systems::on_click;
-use crate::board::BoardPos;
+use bevy::{prelude::*, render::camera::RenderTarget};
 
-pub struct InputPlugin; 
+pub struct InputPlugin;
 
 impl Plugin for InputPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(update_mouse
-            .before(on_click)
-        );
+        app.add_system(update_mouse.before(on_click));
     }
 }
 
@@ -17,7 +15,7 @@ fn update_mouse(
     wnds: Res<Windows>,
     q_camera: Query<(&Camera, &GlobalTransform)>,
     mouse_button: Res<Input<MouseButton>>,
-    mut mouse: ResMut<MouseInfo>
+    mut mouse: ResMut<MouseInfo>,
 ) {
     mouse.world_cords = mouse_to_world(wnds, q_camera);
 
@@ -67,7 +65,7 @@ fn mouse_to_world(
         // let world_pos: Vec2 = world_pos;
 
         return Some(world_pos);
-    } else{
+    } else {
         return None;
     }
 }

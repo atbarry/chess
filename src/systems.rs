@@ -1,12 +1,17 @@
+use crate::{
+    board::Board,
+    components::{Moveable, Tile},
+    constants::{PIECE_Z_LAYER, SELECTED_COLOR},
+    resources::MouseInfo,
+    resources::{HiglightedSquares, SelectedSquare},
+};
 use bevy::prelude::*;
-use crate::{board::Board, constants::{SELECTED_COLOR, PIECE_Z_LAYER}, resources::MouseInfo, components::{Moveable, Tile}, resources::{HiglightedSquares, SelectedSquare}};
 
 pub struct SystemsPlugin;
 
 impl Plugin for SystemsPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .add_system(on_click)
+        app.add_system(on_click)
             .add_system(highlight_squares)
             .add_system(move_pieces)
             .add_system(undo)
@@ -28,7 +33,7 @@ pub fn on_click(
 
     selected.changed = true;
     let target_square = mouse.board_pos;
-    
+
     // if there is no square under the mouse, deselect and exit
     if target_square.is_none() {
         selected.piece = None;
@@ -49,9 +54,9 @@ pub fn on_click(
         }
     }
 
-    selected.piece = board.get_piece(target_square);  
-    selected.tile = Some(board.get_tile_entity(target_square));  
-    
+    selected.piece = board.get_piece(target_square);
+    selected.tile = Some(board.get_tile_entity(target_square));
+
     if let Some(piece) = &selected.piece {
         let moves = board.get_possible_moves(piece.board_pos);
         *highlighted = HiglightedSquares::from_board_changes(&board, moves);
@@ -73,7 +78,7 @@ pub fn highlight_squares(
                 return Some(*h);
             }
         }
-        
+
         None
     };
 
@@ -101,7 +106,7 @@ fn undo(
 ) {
     if input.just_pressed(KeyCode::Z) && input.pressed(KeyCode::LControl) {
         board.undo_last_change(&mut commands);
- 
+
         selected.piece = None;
         selected.tile = None;
         selected.changed = true;
@@ -118,7 +123,7 @@ fn restart(
 ) {
     if input.just_pressed(KeyCode::R) && input.pressed(KeyCode::LControl) {
         board.restart_game(&mut commands);
- 
+
         selected.piece = None;
         selected.tile = None;
         selected.changed = true;
@@ -140,10 +145,10 @@ fn move_pieces(
             transform.translation = moveable.target_pos.extend(PIECE_Z_LAYER);
             commands.entity(entity).remove::<Moveable>();
         } else {
-            transform.translation = moveable.start_pos.lerp(
-                moveable.target_pos, smoothstep(moveable.timer.percent())
-            ).extend(PIECE_Z_LAYER);
+            transform.translation = moveable
+                .start_pos
+                .lerp(moveable.target_pos, smoothstep(moveable.timer.percent()))
+                .extend(PIECE_Z_LAYER);
         }
     }
 }
-

@@ -10,7 +10,7 @@ pub struct Moveable {
 }
 
 #[derive(Component)]
-pub struct Tile{
+pub struct Tile {
     pub normal_color: Color,
 }
 
