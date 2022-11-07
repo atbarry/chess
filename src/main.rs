@@ -16,34 +16,41 @@ mod input;
 #[cfg(debug_assertions)]
 fn main() {
     App::new()
-        .insert_resource(ImageSettings::default_nearest())
-        .add_plugins(DefaultPlugins)
+        .add_plugin(SetupPlugin)
         .add_plugin(WorldInspectorPlugin::new())
-        .add_plugin(ResourcesPlugin)
-        .add_plugin(InputPlugin)
-        .add_plugin(SystemsPlugin)
-        .add_startup_system(create_board)
-        .add_startup_system(spawn_camera)
         .run();
 }
 
 #[cfg(not(debug_assertions))]
 fn main() {
     App::new()
-        .insert_resource(ImageSettings::default_nearest())
-        .add_plugins(DefaultPlugins)
-        .add_plugin(ResourcesPlugin)
-        .add_plugin(InputPlugin)
-        .add_plugin(SystemsPlugin)
-        .add_startup_system(create_board)
-        .add_startup_system(spawn_camera)
+        .add_plugin(SetupPlugin)
         .run();
 }
 
+struct SetupPlugin;
 
+impl Plugin for SetupPlugin {
+    fn build(&self, app: &mut App) {
+        app.insert_resource(ImageSettings::default_nearest())
+            .insert_resource(WindowDescriptor{
+                width: 1000.0,
+                height: 1000.0,
+                title: "Chess".to_owned(),
+                ..Default::default()
+            })
+            .add_plugins(DefaultPlugins)
+            .add_plugin(WorldInspectorPlugin::new())
+            .add_plugin(ResourcesPlugin)
+            .add_plugin(InputPlugin)
+            .add_plugin(SystemsPlugin)
+            .add_startup_system(create_board)
+            .add_startup_system(camera_setup);
+    }
+}
 
-fn spawn_camera(mut commands: Commands) {
-    let size = TILE_SIZE * (BOARD_WIDTH + 2) as f32;
+fn camera_setup(mut commands: Commands) {
+    let size = TILE_SIZE * (BOARD_WIDTH) as f32;
 
     let camera_bundle = Camera2dBundle{
         transform: Transform::from_xyz(
