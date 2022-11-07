@@ -40,7 +40,6 @@ impl Plugin for SetupPlugin {
                 ..Default::default()
             })
             .add_plugins(DefaultPlugins)
-            .add_plugin(WorldInspectorPlugin::new())
             .add_plugin(ResourcesPlugin)
             .add_plugin(InputPlugin)
             .add_plugin(SystemsPlugin)

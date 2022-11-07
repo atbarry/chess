@@ -369,11 +369,18 @@ impl Board {
 
         let mut add_move = |dir: Dir| {
             let slide_moves = slide(dir, side, selected_square, self);
+            
             // check for push move 
             let last_square = match slide_moves.len() {
                 0 => selected_square,
                 _ => slide_moves.last().unwrap().click_pos_to_activate_change(),
             };
+
+            // this means that it has to be an enemy
+            if self.is_occupied(last_square) {
+                moves.extend(slide_moves);
+                return;
+            }
 
             if let Some(next_square) = last_square.square_in_dir(dir) {
                 if self.is_occupied_and_friendly(next_square, piece.side) {
@@ -412,8 +419,7 @@ impl Board {
                     }
                 }
             }
-            
-            
+
             moves.extend(slide_moves);
         };
 
