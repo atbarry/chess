@@ -1,7 +1,4 @@
-use std::thread;
-
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
-use bevy::window::WindowMode;
 use bevy::{
     prelude::*,
     render::{camera::ScalingMode, texture::ImageSettings},
@@ -53,8 +50,7 @@ impl Plugin for SetupPlugin {
             .add_plugin(InputPlugin)
             .add_plugin(SystemsPlugin)
             .add_startup_system(create_board)
-            .add_startup_system(camera_setup)
-            .add_system(frame_rate_limiter);
+            .add_startup_system(camera_setup);
     }
 }
 
@@ -104,8 +100,4 @@ fn create_board(mut commands: Commands, server: Res<AssetServer>) {
     board.spawn_pieces(&mut commands);
 
     commands.insert_resource(board);
-}
-
-fn frame_rate_limiter() {
-    thread::sleep(SLEEP_DUR);
 }
